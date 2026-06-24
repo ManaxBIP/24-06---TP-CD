@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: ${DOCKER_IMAGE:-dalyllreguia/swarm-demo:latest}
+    ports:
+      - "80:3000"
+    networks:
+      - swarm-net
+    deploy:
+      mode: replicated
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          memory: 128M
+
+networks:
+  swarm-net:
+    driver: overlay

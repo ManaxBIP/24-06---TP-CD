@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docker Swarm Load Balancing Demo</title>
+  <!-- Google Fonts Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-decorations">
+    <div class="blur-blob blob-1" id="blob-1"></div>
+    <div class="blur-blob blob-2" id="blob-2"></div>
+  </div>
+
+  <main class="container">
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="docker-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13.983 9.77h-2.111v2.112h2.111V9.77zm0-2.462h-2.111v2.111h2.111V7.308zm-2.461 2.462H9.41v2.112h2.112V9.77zm0-2.462H9.41v2.111h2.112V7.308zm-2.462 2.462H6.95v2.112h2.111V9.77zm0-2.462H6.95v2.111h2.111V7.308zm4.923-2.461h-2.111v2.111h2.111V4.847zm-2.461 0H9.41v2.111h2.112V4.847zm4.923 4.923h-2.111v2.112h2.111V9.77zm4.923 0H16.44v2.112h2.112V9.77zm-2.462-2.462h-2.111v2.111h2.111V7.308zm0-2.461h-2.111v2.111h2.111V4.847zm2.462 4.923h-2.112v2.112h2.112V9.77zM23.77 11.233c-.328-.507-.945-.733-1.467-.655-.078-.506-.39-.933-.872-1.127-.145-.054-.3-.086-.46-.086H18.91v4.305c0 .351-.284.636-.635.636h-1.272v1.273h1.272c.877 0 1.587-.71 1.587-1.587v-.636h.636c.26 0 .506-.057.734-.158.375.465.986.643 1.52.417.65-.274.965-.989.798-1.68-.07-.3-.223-.55-.44-.707zM1.385 14.152C.62 14.152 0 14.773 0 15.538c0 3.255 2.648 5.903 5.903 5.903 5.614 0 9.77-3.791 12.015-5.903H5.903c-2.3 0-3.328-1.385-4.518-1.385z" fill="currentColor"/>
+        </svg>
+        <h1>Docker Swarm Demo</h1>
+      </div>
+      <p class="tagline">Visualisation en temps réel du Load Balancing (CI/CD TP)</p>
+    </header>
+
+    <!-- Main Card showing current container -->
+    <section class="card main-card">
+      <div class="card-glow"></div>
+      <div class="card-content">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span class="status-text">Connecté à la réplique</span>
+        </div>
+        
+        <h2 class="section-title">Conteneur Actif (Hostname)</h2>
+        <div class="hostname-display" id="hostname-box">
+          <span id="hostname-text">Chargement...</span>
+        </div>
+
+        <div class="action-bar">
+          <button id="refresh-btn" class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.27 8H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Actualiser
+          </button>
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" id="auto-refresh">
+              <span class="slider round"></span>
+            </label>
+            <span class="switch-label">Auto-refresh (2s)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid containing system stats and balancing logs -->
+    <div class="grid">
+      <!-- System Specs -->
+      <section class="card stats-card">
+        <div class="card-content">
+          <h3 class="card-title">Spécifications du Conteneur</h3>
+          <div class="stats-list">
+            <div class="stat-item">
+              <span class="stat-label">OS / Architecture</span>
+              <span class="stat-value" id="stat-os">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Processeurs (vCPUs)</span>
+              <span class="stat-value" id="stat-cpus">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Mémoire Vive</span>
+              <span class="stat-value" id="stat-ram">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Uptime Conteneur</span>
+              <span class="stat-value" id="stat-uptime">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">IP Client détectée</span>
+              <span class="stat-value" id="stat-client-ip">-</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Load Balancing Logger -->
+      <section class="card history-card">
+        <div class="card-content">
+          <div class="history-header">
+            <h3 class="card-title">Historique des Requêtes</h3>
+            <button id="clear-history-btn" class="btn-text">Effacer</button>
+          </div>
+          <p class="history-description">Chaque requête montre quelle réplique a répondu. Rafraîchissez pour observer le Round-Robin de Docker Swarm.</p>
+          <div class="history-timeline" id="history-list">
+            <div class="history-empty">Aucune requête enregistrée.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="app-footer">
+      <p>Projet CI/CD par Dalyll • Multi-réplicas (3x) sur Docker Swarm</p>
+    </footer>
+  </main>
+
+  <script>
+    const hostnameText = document.getElementById('hostname-text');
+    const hostnameBox = document.getElementById('hostname-box');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const autoRefreshCheckbox = document.getElementById('auto-refresh');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    const historyList = document.getElementById('history-list');
+
+    // Stats elements
+    const statOs = document.getElementById('stat-os');
+    const statCpus = document.getElementById('stat-cpus');
+    const statRam = document.getElementById('stat-ram');
+    const statUptime = document.getElementById('stat-uptime');
+    const statClientIp = document.getElementById('stat-client-ip');
+
+    // Color blobs
+    const blob1 = document.getElementById('blob-1');
+    const blob2 = document.getElementById('blob-2');
+
+    let autoRefreshInterval = null;
+    let requestHistory = [];
+
+    // Helper to generate a stable HSL color from hostname
+    function getColorsFromHostname(hostname) {
+      let hash = 0;
+      for (let i = 0; i < hostname.length; i++) {
+        hash = hostname.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      
+      const primaryHue = Math.abs(hash % 360);
+      const secondaryHue = (primaryHue + 60) % 360;
+      
+      return {
+        primary: `hsl(${primaryHue}, 85%, 60%)`,
+        secondary: `hsl(${secondaryHue}, 85%, 55%)`,
+        glow: `hsla(${primaryHue}, 85%, 60%, 0.35)`,
+        lightGlow: `hsla(${primaryHue}, 85%, 60%, 0.15)`,
+        primaryHue
+      };
+    }
+
+    // Format uptime (seconds to hh:mm:ss)
+    function formatUptime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      return `${h > 0 ? h + 'h ' : ''}${m > 0 ? m + 'm ' : ''}${s}s`;
+    }
+
+    // Add query details to the UI timeline
+    function addHistoryEntry(hostname, colors, ip) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      // Store in array
+      requestHistory.unshift({ hostname, time: timeStr, colors, ip });
+      if (requestHistory.length > 8) requestHistory.pop();
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (requestHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">Aucune requête enregistrée.</div>';
+        return;
+      }
+
+      historyList.innerHTML = requestHistory.map((item, idx) => `
+        <div class="history-item" style="animation-delay: ${idx * 0.05}s">
+          <div class="history-time">${item.time}</div>
+          <div class="history-badge" style="background: ${item.colors.lightGlow}; color: ${item.colors.primary}; border-color: ${item.colors.glow}">
+            ${item.hostname}
+          </div>
+          <div class="history-ip">${item.ip === '::1' || item.ip === '127.0.0.1' ? 'Localhost' : item.ip}</div>
+        </div>
+      `).join('');
+    }
+
+    // Fetch container details
+    async function fetchInfo() {
+      refreshBtn.classList.add('loading');
+      try {
+        const response = await fetch('/api/info');
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+
+        const colors = getColorsFromHostname(data.hostname);
+
+        // Update main hostname
+        hostnameText.innerText = data.hostname;
+        hostnameBox.style.borderColor = colors.primary;
+        hostnameBox.style.color = colors.primary;
+        hostnameBox.style.boxShadow = `0 8px 32px 0 ${colors.glow}, inset 0 2px 8px ${colors.lightGlow}`;
+
+        // Dynamic theme background adjustment
+        document.documentElement.style.setProperty('--accent-primary', colors.primary);
+        document.documentElement.style.setProperty('--accent-secondary', colors.secondary);
+        document.documentElement.style.setProperty('--accent-glow', colors.glow);
+
+        blob1.style.background = `radial-gradient(circle, ${colors.primary} 0%, transparent 70%)`;
+        blob2.style.background = `radial-gradient(circle, ${colors.secondary} 0%, transparent 70%)`;
+
+        // Update stats
+        statOs.innerText = `${data.platform} (${data.arch})`;
+        statCpus.innerText = data.cpuCount;
+        statRam.innerText = `${data.memory.free} MB libres / ${data.memory.total} MB`;
+        statUptime.innerText = formatUptime(data.uptime);
+        statClientIp.innerText = data.clientIp;
+
+        // Record history entry
+        addHistoryEntry(data.hostname, colors, data.clientIp);
+
+      } catch (err) {
+        console.error("Erreur lors de la récupération des données:", err);
+        hostnameText.innerText = "Erreur Serveur";
+        hostnameBox.style.borderColor = "var(--danger)";
+        hostnameBox.style.color = "var(--danger)";
+      } finally {
+        setTimeout(() => {
+          refreshBtn.classList.remove('loading');
+        }, 300);
+      }
+    }
+
+    // Setup Event Listeners
+    refreshBtn.addEventListener('click', fetchInfo);
+
+    clearHistoryBtn.addEventListener('click', () => {
+      requestHistory = [];
+      renderHistory();
+    });
+
+    autoRefreshCheckbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        autoRefreshInterval = setInterval(fetchInfo, 2000);
+      } else {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+      }
+    });
+
+    // Initial Load
+    fetchInfo();
+  </script>
+</body>
+</html>

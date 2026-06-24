@@ -1,0 +1,20 @@
+{
+  "name": "swarm-load-balancer-demo",
+  "version": "1.0.0",
+  "description": "Node.js app demonstrating Docker Swarm load balancing via hostname detection",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node node_modules/nodemon/bin/nodemon.js src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true
+}
